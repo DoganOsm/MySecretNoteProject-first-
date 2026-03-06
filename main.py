@@ -3,6 +3,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import ImageTk, Image
 from cryptography.fernet import Fernet
+import base64
 
 
 window = Tk()
@@ -36,8 +37,7 @@ user_enter_key.pack()
 user_enter_key_entry = Entry(width=25)
 user_enter_key_entry.pack()
 
-myKey = Fernet.generate_key()
-my_cryp_fernet = Fernet(myKey)
+
 
 
 def new_create_file():
@@ -45,6 +45,10 @@ def new_create_file():
     user_iput1 = enter_title_entry.get().strip()
     user_input2 = user_mesage_title.get("1.0",END).strip()
     user_input3 = user_enter_key_entry.get().strip()
+
+    fixed_pw = user_input3.ljust(32)[:32].encode()
+    myKey = base64.urlsafe_b64encode(fixed_pw)
+    my_cryp_fernet = Fernet(myKey)
 
     encrypted_message = my_cryp_fernet.encrypt(user_input2.encode())
 
@@ -71,7 +75,30 @@ def new_create_file():
         messagebox.showerror("Error", "Please Enter Title and Message")
 
 
+def decrypt_message():
+    encrypted_text = user_mesage_title.get("1.0", END).strip()
+    password = user_enter_key_entry.get().strip()
 
+    if not encrypted_text or not password:
+        messagebox.showerror("Error", "Please enter both the encrypted message and your key!")
+        return
+
+    try:
+
+        fixed_pw = password.ljust(32)[:32].encode()
+        key = base64.urlsafe_b64encode(fixed_pw)
+        fernet = Fernet(key)
+
+
+        decrypted_message = fernet.decrypt(encrypted_text.encode()).decode()
+
+
+        user_mesage_title.delete("1.0", END)
+        user_mesage_title.insert("1.0", decrypted_message)
+
+    except:
+
+        messagebox.showerror("Error", "Invalid key or corrupted data!")
 
 
 
@@ -83,7 +110,7 @@ save_encrypt_button.pack(pady=10)
 
 
 
-decrypt_button = Button(text="Decrypt", fg="black", bg="light gray",)
+decrypt_button = Button(text="Decrypt", fg="black", bg="light gray",command=decrypt_message)
 decrypt_button.pack()
 
 
